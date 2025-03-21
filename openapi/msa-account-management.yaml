@@ -1,0 +1,702 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Account Management API
+  description: |
+    This API allows users to manage account data, including operations for CRUD (Create, Read, Update, Delete) and generate reports based on transactions.
+  contact:
+    name: Account Service API Team
+    email: support@company.com
+servers:
+  - url: http://localhost:8081/api/v1
+    description: Development Environment
+tags:
+  - name: Account Management
+    description: Operations related to account management and reporting.
+  - name: Movement Management
+    description: Operations related to movement management.
+
+paths:
+  /accounts:
+    post:
+      tags:
+        - Account Management
+      summary: Create a new account
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostAccountRequest'
+            examples:
+              CreateAccountRequestExample:
+                $ref: '#/components/examples/CreateAccountRequestExample'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAccountResponse'
+              examples:
+                CreateAccountResponseExample:
+                  $ref: '#/components/examples/GetAccountByIdResponseExample'
+        '400':
+          description: "Bad Request - Invalid input"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                BadRequestExample:
+                  $ref: '#/components/examples/BadRequestExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    get:
+      tags:
+        - Account Management
+      summary: Retrieve all accounts
+      operationId: getAllAccounts
+      responses:
+        '200':
+          description: List of accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostAccountResponse'
+              examples:
+                RetrieveAccountsResponseExample:
+                  $ref: '#/components/examples/RetrieveAccountsResponseExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+  /accounts/{accountNumber}:
+    get:
+      tags:
+        - Account Management
+      summary: Retrieve an account by ID
+      operationId: getAccountById
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAccountResponse'
+              examples:
+                GetAccountByIdResponseExample:
+                  $ref: '#/components/examples/GetAccountByIdResponseExample'
+        '404':
+          description: "Not Found - Account does not exist"
+        '400':
+          description: "Bad Request - Invalid input"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    put:
+      tags:
+        - Account Management
+      summary: Update an account by ID
+      operationId: updateAccountById
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostAccountRequest'
+            examples:
+              UpdateAccountRequestExample:
+                $ref: '#/components/examples/UpdateAccountRequestExample'
+      responses:
+        '200':
+          description: Account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAccountResponse'
+              examples:
+                UpdateAccountResponseExample:
+                  $ref: '#/components/examples/UpdateAccountResponseExample'
+        '404':
+          description: "Not Found - Account does not exist"
+        '400':
+          description: "Bad Request - Invalid input"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    delete:
+      tags:
+        - Account Management
+      summary: Delete an account by ID
+      operationId: deleteAccountById
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Account deleted successfully with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                example:
+                  value:
+                    message: "Account successfully deleted."
+                    customerId: "893847"
+        '404':
+          description: "Not Found - Account does not exist"
+        '400':
+          description: "Bad Request - Invalid input"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+  /movements:
+    post:
+      tags:
+        - Movement Management
+      summary: Register a new movement
+      operationId: createMovement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostMovementRequest'
+            examples:
+              CreateMovementRequestExample:
+                $ref: '#/components/examples/CreateMovementRequestExample'
+      responses:
+        '201':
+          description: Movement registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostMovementResponse'
+              examples:
+                CreateMovementResponseExample:
+                  $ref: '#/components/examples/CreateMovementResponseExample'
+        '400':
+          description: "Bad Request - Invalid input"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                BadRequestExample:
+                  $ref: '#/components/examples/BadRequestExample'
+        '409':
+          description: "Conflict - Insufficient funds"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ConflictExample:
+                  $ref: '#/components/examples/ConflictExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    get:
+      tags:
+        - Movement Management
+      summary: Retrieve all movements
+      operationId: getAllMovements
+      responses:
+        '200':
+          description: List of movements retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostMovementResponse'
+              examples:
+                RetrieveMovementsResponseExample:
+                  $ref: '#/components/examples/RetrieveMovementsResponseExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+  /movements/{movementId}:
+    get:
+      tags:
+        - Movement Management
+      summary: Retrieve a movement by ID
+      operationId: getMovementById
+      parameters:
+        - name: movementId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Movement retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostMovementResponse'
+              examples:
+                GetMovementByIdResponseExample:
+                  $ref: '#/components/examples/GetMovementByIdResponseExample'
+        '404':
+          description: "Not Found - Movement does not exist"
+        '400':
+          description: "Bad Request - Invalid input"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    put:
+      tags:
+        - Movement Management
+      summary: Update a movement by ID
+      operationId: updateMovementById
+      parameters:
+        - name: movementId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostMovementRequest'
+            examples:
+              UpdateMovementRequestExample:
+                $ref: '#/components/examples/UpdateMovementRequestExample'
+      responses:
+        '200':
+          description: Movement updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostMovementResponse'
+              examples:
+                UpdateMovementResponseExample:
+                  $ref: '#/components/examples/UpdateMovementResponseExample'
+        '404':
+          description: "Not Found - Movement does not exist"
+        '400':
+          description: "Bad Request - Invalid input"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    delete:
+      tags:
+        - Movement Management
+      summary: Delete a movement by ID
+      operationId: deleteMovementById
+      parameters:
+        - name: movementId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Movement deleted successfully with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                example:
+                  value:
+                    message: "Movement successfully deleted."
+                    movementId: "mov_123456"
+        '404':
+          description: "Not Found - Movement does not exist"
+        '400':
+          description: "Bad Request - Invalid input"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+  /reports/{customerId}:
+    get:
+      tags:
+        - Account Management
+      summary: Generate account report within a date range
+      operationId: generateAccountReport
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Account report generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountReportResponse'
+              examples:
+                AccountReportResponseExample:
+                  $ref: '#/components/examples/AccountReportResponseExample'
+        '404':
+          description: "Not Found - Client does not exist"
+        '400':
+          description: "Bad Request - Invalid date range"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+components:
+  schemas:
+    AccountStatusEnum:
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - Suspended
+      description: Status of the account.
+
+    AccountTypeEnum:
+      type: string
+      enum:
+        - savings
+        - checking
+      description: Type of the account.
+
+    MovementTypeEnum:
+      type: string
+      enum:
+        - credit
+        - debit
+      description: Type of movement.
+
+    Account:
+      type: object
+      properties:
+        accountNumber:
+          type: integer
+          format: int64
+          description: "Account number."
+        customerId:
+          type: string
+          description: "ID of the customer owning the account."
+        type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        initialBalance:
+          type: number
+          minimum: 0.01
+          description: "Initial balance of the account."
+        status:
+          $ref: '#/components/schemas/AccountStatusEnum'
+      required:
+        - number
+        - type
+        - initialBalance
+        - status
+
+    PostAccountRequest:
+      type:
+        object
+      allOf:
+        - $ref: '#/components/schemas/Account'
+
+    PostAccountResponse:
+      type:
+        object
+      allOf:
+        - $ref: '#/components/schemas/Account'
+
+    PostReportResponse:
+      type:
+        object
+      properties:
+        date:
+          type: string
+          format: date
+          description: "Date of the movement."
+        customerName:
+          type: string
+          description: "Name of the customer owning the account."
+        accountNumber:
+          type: integer
+          format: int64
+          description: "Account number."
+        typeAccount:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        initialBalance:
+          type: number
+          minimum: 0.01
+          description: "Initial balance of the account."
+        status:
+          $ref: '#/components/schemas/AccountStatusEnum'
+        value:
+          type: number
+          minimum: 0.01
+          description: "Value of the movement."
+        typeMovement:
+          $ref: '#/components/schemas/MovementTypeEnum'
+        balance:
+          type: number
+          description: "Balance after movement."
+
+    AccountReportResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostReportResponse'
+      description: "Contains report information on accounts and related movements."
+
+    Movement:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "ID of the movement."
+        accountNumber:
+          type: integer
+          format: int64
+          description: "ID of the account related to the movement."
+        date:
+          type: string
+          format: date
+          description: "Date of the movement."
+        type:
+          $ref: '#/components/schemas/MovementTypeEnum'
+        value:
+          type: number
+          minimum: 0.01
+          description: "Value of the movement."
+        balance:
+          type: number
+          description: "Balance after movement."
+        status:
+          type: boolean
+      required:
+        - accountNumber
+        - type
+        - value
+
+    PostMovementRequest:
+      type:
+        object
+      allOf:
+        - $ref: '#/components/schemas/Movement'
+
+    PostMovementResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Movement'
+      properties:
+        id:
+          type: string
+          readOnly: true
+
+    DeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "Confirmation message indicating successful deletion."
+        id:
+          type: integer
+          format: int64
+          description: "ID of the account that was deleted."
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: "Error code."
+        message:
+          type: string
+          description: "Detailed error message."
+      required:
+        - code
+        - message
+
+  examples:
+    CreateAccountRequestExample:
+      value:
+        accountNumber: "938483"
+        customerId: "0938475843"
+        type: "checking"
+        initialBalance: 1000.00
+        status: "active"
+
+    RetrieveAccountsResponseExample:
+      value:
+        - accountNumber: "938483"
+          customerId: "0938475843"
+          type: "checking"
+          initialBalance: 1000.00
+          status: "active"
+        - accountNumber: "938483"
+          customerId: "0938475843"
+          type: "savings"
+          initialBalance: 500.00
+          status: "active"
+
+    GetAccountByIdResponseExample:
+      value:
+        accountNumber: "938483"
+        customerId: "0938475843"
+        type: "checking"
+        initialBalance: 1000.00
+        status: "active"
+
+    UpdateAccountRequestExample:
+      value:
+        accountNumber: "938483"
+        customerId: "0938475843"
+        type: "checking"
+        initialBalance: 1200.00
+        status: "active"
+
+    UpdateAccountResponseExample:
+      value:
+        accountNumber: "938483"
+        customerId: "1234567890"
+        type: "checking"
+        initialBalance: 1200.00
+        status: "active"
+
+    CreateMovementRequestExample:
+      value:
+        movementId: "mov_123456"
+        accountNumber: "495849"
+        date: "2024-03-12"
+        type: "deposito"
+        value: 100.00
+        balance: 1100.00
+
+    CreateMovementResponseExample:
+      value:
+        movementId: "mov_123456"
+        accountNumber: "495849"
+        date: "2024-03-12"
+        type: "deposito"
+        value: 100.00
+        balance: 1100.00
+
+    RetrieveMovementsResponseExample:
+      value:
+        - movementId: "mov_123456"
+          accountNumber: "495849"
+          date: "2024-03-12"
+          type: "deposito"
+          value: 100.00
+          balance: 1100.00
+
+    GetMovementByIdResponseExample:
+      value:
+        movementId: "mov_123456"
+        accountNumber: "495849"
+        date: "2024-03-12"
+        type: "deposito"
+        value: 100.00
+        balance: 1100.00
+
+    UpdateMovementRequestExample:
+      value:
+        movementId: "mov_123456"
+        accountNumber: "495849"
+        date: "2024-03-12"
+        type: "deposito"
+        value: 150.00
+        balance: 1250.00
+
+    UpdateMovementResponseExample:
+      value:
+        movementId: "mov_123456"
+        accountNumber: "495849"
+        date: "2024-03-12"
+        type: "deposito"
+        value: 150.00
+        balance: 1250.00
+
+    AccountReportResponseExample:
+      value:
+        accounts:
+          - date: "2024-03-12"
+            accountNumber: 495849
+            customerId: "0938483948"
+            typeAccount: "checking"
+            initialBalance: 1000.00
+            status: "active"
+            typeMovement: "credit"
+            value: 100.00
+            balance: 1100.00
+
+    BadRequestExample:
+      value:
+        code: "400"
+        message: "Invalid input data."
+
+    ConflictExample:
+      value:
+        code: "409"
+        message: "Saldo no disponible para procesar el movimiento."
+
+    NotFoundExample:
+      value:
+        code: "404"
+        message: "Movement not found."

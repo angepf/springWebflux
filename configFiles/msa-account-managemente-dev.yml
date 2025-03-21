@@ -1,0 +1,22 @@
+  r2dbc:
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASS}
+
+
+api:
+  http-client:
+    retry:
+      attempts: 1
+      delay: 1000
+    api:
+      msa:
+        customer-management:
+          base-path: ${MSA_CUSTOMER_BASE_PATH}
+          
+aws:
+  sqs:
+    region: ${AWS_REGION_STATIC}
+    accessKey: ${AWS_ACCESS_KEY_SQS}
+    secretKey: ${AWS_SECRET_KEY_SQS}
+    report-queue: ${AWS_SQS_MESSAGES_QUEUE}

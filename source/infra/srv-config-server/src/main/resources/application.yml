@@ -1,0 +1,29 @@
+server:
+  port: ${PORT:9090}
+
+spring:
+  application:
+    name: srv-config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${GIT_URL}
+          username: ${GIT_USER}
+          password: ${GIT_PASS}
+          clone-on-start: true
+          default-label: main
+          search-paths: ${CONFIG_FILES:configFiles}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:9091/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

@@ -1,0 +1,506 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Customer Management API
+  description: |
+    <sup>(EN)</sup> This API allows users to manage customer data, including operations for CRUD (Create, Read, Update, Delete).
+    <br>
+    <br>
+    <sup>(ES)</sup> Esta API permite a los usuarios gestionar datos de clientes, incluyendo operaciones CRUD (Crear, Leer, Actualizar, Eliminar).
+    <br>
+  contact:
+    name: Customer Service API Team - Angélica Pinos
+    email: bpinos@pichincha.com
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development Environment
+tags:
+  - name: Customer Management
+    description: Operations related to customer and persona management.
+
+paths:
+  /customers:
+    post:
+      tags:
+        - Customer Management
+      summary: |
+        ⁽ᴱᴺ⁾ Create a new customer
+        ⁽ᴱˢ⁾ Creacion de nuevos clientes
+      operationId: PostCustomer
+      description: |
+        ### Details:
+        Allows create a new customer based in the info provided.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCustomerRequest'
+            examples:
+              PostCustomerRequest:
+                $ref: '#/components/examples/PostCustomerRequestExample'
+      responses:
+        '200':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCustomerResponse'
+              examples:
+                PostCustomerResponseExample:
+                  $ref: '#/components/examples/PostCustomerResponseExample'
+        '400':
+          description: "Bad Request - Invalid input"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ErrorResponseExample:
+                  $ref: '#/components/examples/BadRequestExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+    get:
+      tags:
+        - Customer Management
+      summary: |
+        ⁽ᴱᴺ⁾ Retrieve all customers
+        ⁽ᴱˢ⁾ Recuperar todos los clientes
+      operationId: getAllCustomers
+      description: |
+        Retrieve a list of all customers.
+      responses:
+        '200':
+          description: List of customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostCustomerResponse'
+              examples:
+                RetrieveCustomersResponse:
+                  $ref: '#/components/examples/RetrieveCustomersResponseExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+  /customers/{customerId}:
+    get:
+      tags:
+        - Customer Management
+      summary: |
+        ⁽ᴱᴺ⁾ Retrieve a customer by ID
+        ⁽ᴱˢ⁾ Recuperar cliente por ID
+      operationId: getCustomerById
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the customer
+      responses:
+        '200':
+          description: Customer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCustomerResponse'
+              examples:
+                GetCustomerByIdResponse:
+                  $ref: '#/components/examples/GetCustomerByIdResponseExample'
+        '404':
+          description: "Not Found - Customer does not exist"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotFoundResponse:
+                  $ref: '#/components/examples/NotFoundExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    put:
+      tags:
+        - Customer Management
+      summary: |
+        ⁽ᴱᴺ⁾ Update a customer by ID
+        ⁽ᴱˢ⁾ Actualizar cliente por ID
+      operationId: updateCustomerById
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCustomerRequest'
+            examples:
+              UpdateCustomerRequest:
+                $ref: '#/components/examples/UpdateCustomerRequestExample'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCustomerResponse'
+              examples:
+                UpdateCustomerResponse:
+                  $ref: '#/components/examples/UpdateCustomerResponseExample'
+        '400':
+          description: "Bad Request - Invalid data"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                BadRequestUpdate:
+                  $ref: '#/components/examples/BadRequestExample'
+        '404':
+          description: "Not Found - Customer does not exist"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotFoundUpdate:
+                  $ref: '#/components/examples/NotFoundExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+    delete:
+      tags:
+        - Customer Management
+      summary: |
+        ⁽ᴱᴺ⁾ Delete a customer by ID
+        ⁽ᴱˢ⁾ Eliminar cliente por ID
+      operationId: deleteCustomerById
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the customer
+      responses:
+        '200':
+          description: Customer deleted successfully with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteCustomerResponse'
+              examples:
+                example:
+                  value:
+                    message: "Customer successfully deleted."
+                    customerId: "cus_hG7456G7VcJ7K3"
+        '404':
+          description: "Not Found - Customer does not exist"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotFoundDelete:
+                  $ref: '#/components/examples/NotFoundExample'
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+  /reports/{customerId}:
+    get:
+      tags:
+        - Account Management
+      summary: Generate account report within a date range
+      operationId: generateAccountReport
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Account report generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountReportResponse'
+              examples:
+                AccountReportResponseExample:
+                  $ref: '#/components/examples/AccountReportResponseExample'
+        '404':
+          description: "Not Found - Client does not exist"
+        '400':
+          description: "Bad Request - Invalid date range"
+        '401':
+          description: "Unauthorized - Authentication required"
+        '403':
+          description: "Forbidden - Access denied"
+
+components:
+  schemas:
+    GenderEnum:
+      type: string
+      enum:
+        - Male
+        - Female
+      description: Specifies the gender of a person
+
+    StatusEnum:
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - Suspended
+      description: Status of the customer
+
+    AccountStatusEnum:
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - Suspended
+      description: Status of the account.
+
+    AccountTypeEnum:
+      type: string
+      enum:
+        - savings
+        - checking
+      description: Type of the account.
+
+    MovementTypeEnum:
+      type: string
+      enum:
+        - credit
+        - debit
+      description:
+        Type of movement.
+
+    Person:
+      type: object
+      properties:
+        name:
+          type: string
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        identification:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+      required:
+        - name
+        - identification
+
+    PostCustomerRequest:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            password:
+              type: string
+            status:
+              $ref: '#/components/schemas/StatusEnum'
+          required:
+            - password
+            - status
+      description: "Schema used for creating and updating customer information"
+
+    PostCustomerResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Person'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/StatusEnum'
+      required:
+        - customerId
+        - status
+      description: "Schema used for retrieving customer information"
+
+    DeleteCustomerResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: "Confirmation message indicating successful deletion."
+        customerId:
+          type: string
+          description: "ID of the customer that was deleted."
+    PostReportResponse:
+      type:
+        object
+      properties:
+        date:
+          type: string
+          format: date
+          description: "Date of the movement."
+        customerName:
+          type: string
+          description: "Name of the customer owning the account."
+        accountNumber:
+          type: integer
+          format: int64
+          description: "Account number."
+        typeAccount:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        initialBalance:
+          type: number
+          minimum: 0.01
+          description: "Initial balance of the account."
+        status:
+          $ref: '#/components/schemas/AccountStatusEnum'
+        value:
+          type: number
+          minimum: 0.01
+          description: "Value of the movement."
+        typeMovement:
+          $ref: '#/components/schemas/MovementTypeEnum'
+        balance:
+          type: number
+          description: "Balance after movement."
+
+    AccountReportResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostReportResponse'
+      description: "Contains report information on accounts and related movements."
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+      description: "Schema used for error responses"
+
+  examples:
+    PostCustomerRequestExample:
+      value:
+        name: "Victor Hugo"
+        gender: "Male"
+        identification: "ID123456789"
+        address: "123 Main St, Quito, Ecuador"
+        phone: "+593 987654321"
+        password: "securePassword123"
+        status: "active"
+
+    PostCustomerResponseExample:
+      value:
+        customerId: "cus_hG7456G7VcJ7K3"
+        name: "Victor Hugo"
+        gender: "Male"
+        identification: "ID123456789"
+        address: "123 Main St, Quito, Ecuador"
+        phone: "+593 987654321"
+        status: "active"
+
+    RetrieveCustomersResponseExample:
+      value:
+        - customerId: "cus_hG7456G7VcJ7K3"
+          name: "Victor Hugo"
+          gender: "Male"
+          identification: "ID123456789"
+          address: "123 Main St, Quito, Ecuador"
+          phone: "+593 987654321"
+          status: "active"
+        - customerId: "cus_A12B3C45D6E7F8G9"
+          name: "Maria Rodriguez"
+          gender: "Female"
+          identification: "ID987654321"
+          address: "456 Second St, Quito, Ecuador"
+          phone: "+593 987654322"
+          status: "active"
+
+    GetCustomerByIdResponseExample:
+      value:
+        customerId: "cus_hG7456G7VcJ7K3"
+        name: "Victor Hugo"
+        gender: "Male"
+        identification: "ID123456789"
+        address: "123 Main St, Quito, Ecuador"
+        phone: "+593 987654321"
+        status: "active"
+
+    UpdateCustomerRequestExample:
+      value:
+        name: "Victor Hugo Updated"
+        gender: "Male"
+        identification: "ID123456789"
+        address: "456 Updated St, Quito, Ecuador"
+        phone: "+593 987654321"
+        password: "newSecurePassword456"
+        status: "active"
+
+    UpdateCustomerResponseExample:
+      value:
+        customerId: "cus_hG7456G7VcJ7K3"
+        name: "Victor Hugo Updated"
+        gender: "Male"
+        identification: "ID123456789"
+        address: "456 Updated St, Quito, Ecuador"
+        phone: "+593 987654321"
+        status: "active"
+
+    AccountReportResponseExample:
+      value:
+        accounts:
+          - date: "2024-03-12"
+            accountNumber: 495849
+            customerId: "0938483948"
+            typeAccount: "checking"
+            initialBalance: 1000.00
+            status: "active"
+            typeMovement: "credit"
+            value: 100.00
+            balance: 1100.00
+
+    BadRequestExample:
+      value:
+        code: "400"
+        message: "Invalid input data for customer creation."
+
+    NotFoundExample:
+      value:
+        code: "404"
+        message: "Customer not found."

@@ -1,0 +1,93 @@
+version: '3.8'
+services:
+  database-server:
+    image: postgres
+    container_name: database-server
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASS=${POSTGRES_PASS}
+    ports:
+      - "5432:5432"
+    networks:
+      - network-bridge
+
+  srv-config-server:
+    image: srv-srv-config-server
+    container_name: srv-srv-config-server
+    build: ./infra/srv-config-server
+    ports:
+      - "9090:8080"
+    environment:
+      - PORT=8080
+      - GIT_CONFIG_URI=${GIT_CONFIG_URI}
+      - GIT_USER_NAME=${GIT_USER_NAME}
+      - GIT_USER_PASSWORD=${GIT_USER_PASSWORD}
+      - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka
+    networks:
+      - network-bridge
+    depends_on:
+      - srv-eureka-server
+
+  srv-eureka-server:
+    image: srv-eureka-server
+    container_name: srv-eureka-server
+    build: ./infra/srv-eureka-server
+    ports:
+      - "9091:8080"
+    environment:
+      - PORT=8080
+    networks:
+      - network-bridge
+
+  msa-customer-management:
+    image: msa-customer-management
+    container_name: msa-customer-management
+    build: ./apis/msa-customer-management
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - CONFIG_SERVER_URI=http://srv-config-server:8080
+      - CONFIG_PROFILE=dev
+      - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka
+      - POSTGRES_URL=r2dbc:postgresql://localhost:5432/postgres
+      - POSTGRES_PASS=${POSTGRES_PASS}
+      - AWS_REGION_STATIC=us-east-1
+      - AWS_ACCESS_KEY_SQS=${AWS_ACCESS_KEY_SQS}
+      - AWS_SECRET_KEY_SQS=${AWS_SECRET_KEY_SQS}
+      - AWS_SQS_MESSAGES_QUEUE=https://sqs.us-east-1.amazonaws.com/889198008697/report-sqs
+    networks:
+      - network-bridge
+    depends_on:
+      - srv-config-server
+      - srv-eureka-server
+      - database-server
+
+  msa-account-management:
+    image: msa-account-management
+    container_name: msa-account-management
+    build: ./apis/msa-account-management
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - CONFIG_SERVER_URI=http://srv-config-server:8080
+      - CONFIG_PROFILE=dev
+      - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka
+      - POSTGRES_URL=r2dbc:postgresql://localhost:5432/postgres
+      - POSTGRES_PASS=${POSTGRES_PASS}
+      - MSA_CUSTOMER_BASE_PATH=http://localhost:8081/api/v1}
+      - AWS_REGION_STATIC=us-east-1
+      - AWS_ACCESS_KEY_SQS=${AWS_ACCESS_KEY_SQS}
+      - AWS_SECRET_KEY_SQS=${AWS_SECRET_KEY_SQS}
+      - AWS_SQS_MESSAGES_QUEUE=https://sqs.us-east-1.amazonaws.com/889198008697/report-sqs
+    networks:
+      - network-bridge
+    depends_on:
+      - srv-config-server
+      - srv-eureka-server
+      - db-msa-account-management
+networks:
+  network-bridge:
+    driver: bridge

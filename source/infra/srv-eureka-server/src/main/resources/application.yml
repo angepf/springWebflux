@@ -1,0 +1,11 @@
+server:
+  port: ${PORT:9091}
+
+spring:
+  application:
+    name: srv-eureka-server
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false

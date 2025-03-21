@@ -1,0 +1,11 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: msa-account-management
+  cloud:
+    config:
+      uri: ${CONFIG_SERVER_URI:http://localhost:9090}
+      profile: ${CONFIG_PROFILE:dev}
+      fail-fast: true

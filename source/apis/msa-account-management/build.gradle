@@ -1,0 +1,172 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.gradle.api.tasks.JavaExec
+
+plugins {
+	id 'jacoco'
+	id 'java'
+	id 'org.springframework.boot' version '3.3.7'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.openapi.generator' version '7.9.0'
+	id 'info.solidsoft.pitest' version '1.15.0'
+}
+
+def packageName = "com.challenge.api.account.management"
+
+springBoot {
+	mainClass = "${packageName}.MsaAccountManagementApplication"
+}
+
+group = 'com.challenge.api'
+version = "1.0.1"
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	springCloudVersion = "2022.0.3"
+	awsCloudVersion= "3.0.2"
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:2022.0.3"
+	}
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
+
+	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${awsCloudVersion}")
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+
+	// Mapstruct
+	implementation group: "org.mapstruct" , name: "mapstruct" , version: "1.6.2"
+	annotationProcessor group: "org.mapstruct" , name: "mapstruct-processor" , version: "1.6.2"
+
+	implementation 'org.springframework.cloud:spring-cloud-starter-config'
+	implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'org.postgresql:r2dbc-postgresql'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+	testImplementation 'org.mockito:mockito-core:4.0.0'
+	testImplementation 'org.mockito:mockito-junit-jupiter:4.0.0'
+	testImplementation 'org.pitest:pitest-junit5-plugin:0.14'
+}
+
+tasks.register('buildSpringServer', GenerateTask) {
+	generatorName = "spring"
+	templateDir ="$rootDir/src/main/resources/openapi-templates"
+	inputSpec = "$rootDir/src/main/resources/msa-account-management.yaml".toString()
+	outputDir = "$buildDir/generated".toString()
+	apiPackage = "${packageName}.controller"
+	modelPackage = "${packageName}.service.models"
+	library = "spring-boot"
+	configOptions = [
+			skipDefaultInterface                    : "true",
+			useSpringBoot3                          : "true",
+			useJakartaEe                            : "true",
+			serializableModel                       : "true",
+			dateLibrary                             : "java8",
+			openApiNullable                         : "false",
+			reactive                                : "true",
+			apiFirst                                : "false",
+			delegatePattern                         : "false",
+			configPackage                           : "${packageName}.config",
+			sourceFolder                            : "src/main/java",
+			basePackage                             : "${packageName}",
+			disallowAdditionalPropertiesIfNotPresent: "true",
+			interfaceOnly                           : "true"
+	]
+}
+
+tasks.register('buildSpringClientMsaCustomerManagement', GenerateTask) {
+	generatorName = "java"
+	inputSpec = "$rootDir/src/main/resources/msa-customer-management.yaml".toString()
+	templateDir = "$rootDir/src/main/resources/openapi-templates/client"
+	apiPackage = "${packageName}.msa.customer.management.client.controller"
+	modelPackage = "${packageName}.msa.customer.management.client.service.models"
+	outputDir = "$buildDir/generated".toString()
+	library = "webclient"
+	configOptions = [useSpringBoot3 : "true",
+					 useJakartaEe   : "true",
+					 openApiNullable: "false",
+					 sourceFolder   : "src/main/java",
+					 configPackage  : "${packageName}.msa.customer.management.config"]
+}
+
+compileJava {
+	dependsOn buildSpringServer,
+			buildSpringClientMsaCustomerManagement
+	options.compilerArgs += [
+			"-Amapstruct.suppressGeneratorTimestamp=true",
+			"-Amapstruct.suppressGeneratorVersionInfoComment=true",
+			"-Amapstruct.verbose=true",
+			"-Amapstruct.defaultComponentModel=spring"
+	]
+}
+
+tasks.withType(Test) {
+	useJUnitPlatform()
+}
+
+task generateClasspathFile {
+	doLast {
+		def classpathFile = file("$buildDir/tmp/classpath.txt")
+		classpathFile.parentFile.mkdirs()
+		classpathFile.text = sourceSets.main.runtimeClasspath.asPath
+	}
+}
+
+bootRun {
+	dependsOn generateClasspathFile
+	doFirst {
+		def classpathFile = file("$buildDir/tmp/classpath.txt")
+		classpath = files(classpathFile.text.split(File.pathSeparator))
+	}
+}
+
+sourceSets.main.java.srcDirs = ["$buildDir/generated/src/main/java", "src/main/java"]
+
+pitest {
+	useClasspathJar = false
+	useClasspathFile = true
+	junit5PluginVersion = '1.2.1'
+	targetClasses = ['com.challenge.api.account.management.service.impl.MovementServiceImpl']
+	excludedClasses = ['com.challenge.api.account.management.configuration.*',
+					   'com.challenge.api.account.management.controller.*',
+					   'com.challenge.api.account.management.domain.*',
+					   'com.challenge.api.account.management.exception.*',
+					   'com.challenge.api.account.management.repository.*',
+					   'com.challenge.api.account.management.util.*']
+	threads = 12
+	outputFormats = ['XML', 'HTML']
+	timestampedReports = false
+}

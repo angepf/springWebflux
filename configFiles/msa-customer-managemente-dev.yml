@@ -1,0 +1,11 @@
+  r2dbc:
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASS}
+
+aws:
+  sqs:
+    region: ${AWS_REGION_STATIC}
+    accessKey: ${AWS_ACCESS_KEY_SQS}
+    secretKey: ${AWS_SECRET_KEY_SQS}
+    report-queue: ${AWS_SQS_MESSAGES_QUEUE}
