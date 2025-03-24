@@ -8,11 +8,11 @@ spring:
     config:
       server:
         git:
-          uri: ${GIT_URL}
-          username: ${GIT_USER}
-          password: ${GIT_PASS}
+          uri: ${GIT_CONFIG_URI}
+          username: ${GIT_USER_NAME}
+          password: ${GIT_USER_PASSWORD}
           clone-on-start: true
-          default-label: main
+          default-label: master
           search-paths: ${CONFIG_FILES:configFiles}
 
 eureka:
