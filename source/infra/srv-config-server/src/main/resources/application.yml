@@ -18,12 +18,17 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:9091/eureka/}
+      defaultZone: ${EUREKA_SERVER_URI:http://localhost:9091/eureka/}
     register-with-eureka: true
     fetch-registry: true
-
+    
 management:
   endpoints:
     web:
       exposure:
         include: "*"
+        
+logging:
+  level:
+    com.netflix.discovery: DEBUG
+    org.springframework.cloud.netflix.eureka: DEBUG

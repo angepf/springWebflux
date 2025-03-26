@@ -9,10 +9,9 @@ spring:
       uri: ${CONFIG_SERVER_URI:http://localhost:9090}
       profile: ${CONFIG_PROFILE:dev}
       fail-fast: true
-
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:9091/eureka/}
+      defaultZone: ${EUREKA_SERVER_URI:http://localhost:9091/eureka/}
     register-with-eureka: true
     fetch-registry: true

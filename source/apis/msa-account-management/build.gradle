@@ -4,7 +4,7 @@ import org.gradle.api.tasks.JavaExec
 plugins {
 	id 'jacoco'
 	id 'java'
-	id 'org.springframework.boot' version '3.3.7'
+	id 'org.springframework.boot' version '3.1.1'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.openapi.generator' version '7.9.0'
 	id 'info.solidsoft.pitest' version '1.15.0'

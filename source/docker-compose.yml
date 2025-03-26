@@ -5,11 +5,13 @@ services:
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_PASS=${POSTGRES_PASS}
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
     ports:
       - "5433:5432"
     networks:
       - network-bridge
+    volumes:
+      - ./db-init:/docker-entrypoint-initdb.d
 
   srv-config-server:
     image: srv-config-server
@@ -22,7 +24,7 @@ services:
       - GIT_CONFIG_URI=${GIT_CONFIG_URI}
       - GIT_USER_NAME=${GIT_USER_NAME}
       - GIT_USER_PASSWORD=${GIT_USER_PASSWORD}
-      - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka
+      - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka/
     networks:
       - network-bridge
     depends_on:
@@ -50,7 +52,8 @@ services:
       - CONFIG_SERVER_URI=http://srv-config-server:8080
       - CONFIG_PROFILE=dev
       - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka
-      - POSTGRES_URL=r2dbc:postgresql://localhost:5433/postgres
+      - POSTGRES_URL=r2dbc:postgresql://database-server:5432/postgres
+      - POSTGRES_USER=postgres
       - POSTGRES_PASS=${POSTGRES_PASS}
       - AWS_REGION_STATIC=us-east-1
       - AWS_ACCESS_KEY_SQS=${AWS_ACCESS_KEY_SQS}
@@ -74,7 +77,8 @@ services:
       - CONFIG_SERVER_URI=http://srv-config-server:8080
       - CONFIG_PROFILE=dev
       - EUREKA_SERVER_URI=http://srv-eureka-server:8080/eureka
-      - POSTGRES_URL=r2dbc:postgresql://localhost:5433/postgres
+      - POSTGRES_URL=r2dbc:postgresql://database-server:5432/postgres
+      - POSTGRES_USER=postgres
       - POSTGRES_PASS=${POSTGRES_PASS}
       - MSA_CUSTOMER_BASE_PATH=http://localhost:8081/api/v1}
       - AWS_REGION_STATIC=us-east-1
@@ -88,5 +92,5 @@ services:
       - srv-eureka-server
       - database-server
 networks:
-  network-bridge:
+  network-bridge:	
     driver: bridge
