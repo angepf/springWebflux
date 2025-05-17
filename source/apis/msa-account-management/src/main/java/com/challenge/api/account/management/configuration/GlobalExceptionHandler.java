@@ -1,5 +1,6 @@
 package com.challenge.api.account.management.configuration;
 
+import com.challenge.api.account.management.domain.enums.ServiceErrors;
 import com.challenge.api.account.management.exception.AccountException;
 import com.challenge.api.account.management.exception.CustomerException;
 import com.challenge.api.account.management.service.models.ErrorResponse;
@@ -19,16 +20,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccountException(AccountException ex, ServerWebExchange exchange) {
         String errorMessage = ex.getMessage();
         if (errorMessage.contains("404 Not Found")) {
-            errorMessage = "Customer not found";
+            errorMessage = ServiceErrors.NOT_FOUND.getErrorMessage();
         }
-        ErrorResponse errorResponse = new ErrorResponse("ACCOUNT_ERROR", errorMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ErrorResponse errorResponse = new ErrorResponse(
+                ServiceErrors.NOT_FOUND.getErrorCode(), errorMessage
+        );
+        return ResponseEntity.status(ServiceErrors.NOT_FOUND.getStatusCode()).body(errorResponse);
     }
 
     @ExceptionHandler(CustomerException.class)
     public ResponseEntity<ErrorResponse> handleCustomerException(CustomerException ex, ServerWebExchange exchange) {
-        ErrorResponse errorResponse = new ErrorResponse("CUSTOMER_ERROR", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        ErrorResponse errorResponse = new ErrorResponse(ServiceErrors.CUSTOMER_SERVICE_ERROR.getErrorCode(), ex.getMessage());
+        return ResponseEntity.status(ServiceErrors.CUSTOMER_SERVICE_ERROR.getStatusCode()).body(errorResponse);
     }
 
     @ExceptionHandler(WebExchangeBindException.class)
@@ -36,35 +39,36 @@ public class GlobalExceptionHandler {
         String errorMessage = ex.getFieldErrors().stream()
                 .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .findFirst()
-                .orElse("Validation error");
-        ErrorResponse errorResponse = new ErrorResponse("VALIDATION_ERROR", errorMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+                .orElse(ServiceErrors.BAD_REQUEST.getErrorMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ServiceErrors.BAD_REQUEST.getErrorCode(), errorMessage);
+
+        return ResponseEntity.status(ServiceErrors.BAD_REQUEST.getStatusCode()).body(errorResponse);
     }
 
     @ExceptionHandler(ServerWebInputException.class)
     public ResponseEntity<ErrorResponse> handleServerWebInputException(ServerWebInputException ex, ServerWebExchange exchange) {
-        String errorMessage = "Invalid input";
+        String errorMessage = ServiceErrors.INVALID_INPUT.getErrorMessage();
         if (ex.getCause() instanceof TypeMismatchException castEx) {
-            errorMessage = "Invalid value for field: " + castEx.getPropertyName() + ". Provided value: " + castEx.getValue();
+            errorMessage = ServiceErrors.INVALID_INPUT.getErrorMessage() + castEx.getPropertyName() + ". Provided value: " + castEx.getValue();
         } else if (ex.getCause() != null) {
             String causeMessage = ex.getCause().getMessage();
             if (causeMessage.contains("Cannot construct instance of")) {
                 String enumTypeFull = causeMessage.split("`")[1];
                 String enumType = enumTypeFull.substring(enumTypeFull.lastIndexOf('.') + 1);
                 String unexpectedValue = causeMessage.split("'")[1];
-                errorMessage = "Invalid value for " + enumType + ": " + unexpectedValue;
+                errorMessage = ServiceErrors.INVALID_INPUT.getErrorMessage() + enumType + ": " + unexpectedValue;
             } else {
-                errorMessage = "Invalid input: " + ex.getCause().getMessage();
+                errorMessage = ServiceErrors.INVALID_INPUT.getErrorMessage() + ex.getCause().getMessage();
             }
         }
-        ErrorResponse errorResponse = new ErrorResponse("ENUM_ERROR", errorMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ErrorResponse errorResponse = new ErrorResponse(ServiceErrors.INVALID_INPUT.getErrorCode(), errorMessage);
+        return ResponseEntity.status(ServiceErrors.INVALID_INPUT.getStatusCode()).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex, ServerWebExchange exchange) {
-        ErrorResponse errorResponse = new ErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred: " + ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        ErrorResponse errorResponse = new ErrorResponse(ServiceErrors.INTERNAL_SERVER_ERROR.getErrorMessage(), ServiceErrors.INTERNAL_SERVER_ERROR.getErrorMessage() + ex.getMessage());
+        return ResponseEntity.status(ServiceErrors.INVALID_INPUT.getStatusCode()).body(errorResponse);
     }
 
 }
