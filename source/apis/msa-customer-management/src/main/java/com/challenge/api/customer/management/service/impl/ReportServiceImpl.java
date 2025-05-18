@@ -1,7 +1,7 @@
 package com.challenge.api.customer.management.service.impl;
 
 import com.challenge.api.customer.management.domain.Report;
-import com.challenge.api.customer.management.domain.enums.MappingErrors;
+import com.challenge.api.customer.management.domain.enums.ReportError;
 import com.challenge.api.customer.management.exception.ReportException;
 import com.challenge.api.customer.management.repository.PersonRepository;
 import com.challenge.api.customer.management.repository.ReportRepository;
@@ -42,7 +42,7 @@ public class ReportServiceImpl implements ReportService {
                 })
                 .doOnSuccess(reportResponse -> log.info("Report retrieved successfully"))
                 .doOnError(error -> log.error("Error retrieving report: {}", error.getMessage()))
-                .onErrorMap(error -> new ReportException(MappingErrors.BAD_GATEWAY, "Failed to retrieve account: " + error.getMessage()));
+                .onErrorMap(error -> new ReportException(ReportError.GENERATION_FAILED, "Failed to retrieve report: " + error.getMessage()));
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ReportServiceImpl implements ReportService {
                 .map(savedReport -> reportMapper.toReportResponse(savedReport, reportResponse.getCustomerName()))
                 .doOnSuccess(savedReport -> log.info("Report saved successfully: {}", savedReport))
                 .doOnError(error -> log.error("Error saving report: {}", error.getMessage()))
-                .onErrorMap(error -> new ReportException(MappingErrors.BAD_GATEWAY, "Failed to save report: " + error.getMessage()));
+                .onErrorMap(error -> new ReportException(ReportError.INTERNAL_ERROR, "Failed to save report: " + error.getMessage()));
     }
 
 }

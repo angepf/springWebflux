@@ -42,4 +42,5 @@ public class AwsConfig {
                 .region(Region.of(awsProperties.getSqs().getRegion()))
                 .credentialsProvider(sqsCredentialsProvider).build();
     }
+
 }

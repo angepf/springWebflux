@@ -11,4 +11,5 @@ import java.time.LocalDate;
 public interface ReportRepository extends ReactiveCrudRepository<Report, Long> {
 
     Flux<Report> findByCustomerIdAndDateBetween(String customerId, LocalDate starDate, LocalDate endDate);
+    
 }

@@ -80,7 +80,7 @@ services:
       - POSTGRES_URL=r2dbc:postgresql://database-server:5432/postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASS=${POSTGRES_PASS}
-      - MSA_CUSTOMER_BASE_PATH=http://localhost:8081/api/v1}
+      - MSA_CUSTOMER_BASE_PATH=http://msa-customer-management:8080/api/v1
       - AWS_REGION_STATIC=us-east-1
       - AWS_ACCESS_KEY_SQS=${AWS_ACCESS_KEY_SQS}
       - AWS_SECRET_KEY_SQS=${AWS_SECRET_KEY_SQS}

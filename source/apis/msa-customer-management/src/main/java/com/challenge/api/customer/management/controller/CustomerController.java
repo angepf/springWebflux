@@ -32,34 +32,25 @@ public class CustomerController implements CustomersApi {
     @Override
     public Mono<ResponseEntity<PostCustomerResponse>> getCustomerById(String identification, ServerWebExchange exchange) {
         return customerService.getCustomerById(identification)
-                .map(ResponseEntity::ok)
-                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+                .map(ResponseEntity::ok);
     }
 
     @Override
     public Mono<ResponseEntity<PostCustomerResponse>> postCustomer(@Valid PostCustomerRequest postCustomerRequest, ServerWebExchange exchange) {
         return customerService.createCustomer(postCustomerRequest)
-                .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.badRequest().build());
+                .map(ResponseEntity::ok);
     }
 
     @Override
     public Mono<ResponseEntity<PostCustomerResponse>> updateCustomerById(String customerId, @Valid PostCustomerRequest postCustomerRequest, ServerWebExchange exchange) {
         return customerService.updateCustomer(customerId, postCustomerRequest)
-                .map(ResponseEntity::ok)
-                    .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+                .map(ResponseEntity::ok);
     }
 
     @Override
     public Mono<ResponseEntity<DeleteCustomerResponse>> deleteCustomerById(@PathVariable String customerId, ServerWebExchange exchange) {
         return customerService.deleteCustomer(customerId)
-        .map(deleteResponse -> {
-                  if ("Customer successfully deleted.".equals(deleteResponse.getMessage())) {
-                      return ResponseEntity.ok(deleteResponse);
-                  } else {
-                      return ResponseEntity.status(404).body(deleteResponse);
-                  }
-              });
+                .map(ResponseEntity::ok);
     }
 
 }

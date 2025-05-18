@@ -94,11 +94,17 @@ Ejecuta las pruebas con:
 src/
  └── main/
      ├── java/
-     │   └── com/tuempresa/
-     │       ├── application/
+     │   └── com/challenge/api/endpoint/management
+     │       ├── configuration/
+     │       ├── controller/
      │       ├── domain/
-     │       ├── infrastructure/
-     │       └── config/
+     │           └── enums/
+     │       ├── exception/
+     │       ├── repository/
+     │       ├── service/
+     │           └── impl/
+     │           └── mapper/
+     │       └── util/
      └── resources/
          └── application.yml
 ```

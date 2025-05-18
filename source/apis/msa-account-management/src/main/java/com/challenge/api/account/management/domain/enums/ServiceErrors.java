@@ -14,11 +14,13 @@ public enum ServiceErrors {
 
     NOT_FOUND("SEAM-002", HttpStatus.NOT_FOUND, "Resource not found"),
 
-    CUSTOMER_SERVICE_ERROR("SEAM-003", HttpStatus.BAD_REQUEST, "Internal error"),
+    ACCOUNT_SERVICE_ERROR("SEAM-003", HttpStatus.BAD_REQUEST, "Account error"),
 
-    INVALID_INPUT("SEAM-004", HttpStatus.BAD_REQUEST, "Invalid input"),
+    CUSTOMER_SERVICE_ERROR("SEAM-004", HttpStatus.BAD_REQUEST, "Customer error"),
 
-    INTERNAL_SERVER_ERROR("SEAM-005", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+    INVALID_INPUT("SEAM-005", HttpStatus.BAD_REQUEST, "Invalid input"),
+
+    INTERNAL_SERVER_ERROR("SEAM-006", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
 
     private final String errorCode;
     private final HttpStatus statusCode;

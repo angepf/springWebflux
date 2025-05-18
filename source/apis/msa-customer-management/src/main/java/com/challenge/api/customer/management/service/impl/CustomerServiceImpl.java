@@ -2,6 +2,7 @@ package com.challenge.api.customer.management.service.impl;
 
 import com.challenge.api.customer.management.domain.Customer;
 import com.challenge.api.customer.management.domain.Person;
+import com.challenge.api.customer.management.domain.enums.CustomerError;
 import com.challenge.api.customer.management.exception.CustomerException;
 import com.challenge.api.customer.management.repository.CustomerRepository;
 import com.challenge.api.customer.management.service.CustomerService;
@@ -36,7 +37,7 @@ public class CustomerServiceImpl implements CustomerService {
         return customerRepository.findAll()
                 .flatMap(customer -> personService.getById(customer.getIdentification())
                         .map(person -> customerMapper.toPostCustomerResponse(customer, person)))
-                .onErrorMap(exception -> new CustomerException(exception.getMessage()))
+                .onErrorResume(this::mapUnexpectedErrors)
                 .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
     }
 
@@ -48,8 +49,8 @@ public class CustomerServiceImpl implements CustomerService {
         return personService.getById(identification)
                 .flatMap(person -> customerRepository.findById(person.getIdentification())
                         .map(customer -> customerMapper.toPostCustomerResponse(customer, person)))
-                .switchIfEmpty(Mono.error(new CustomerException("Customer not found", identification)))
-                .onErrorMap(exception -> new CustomerException(exception.getMessage()))
+                .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Customer not found: " + identification)))
+                .onErrorResume(this::mapUnexpectedErrors)
                 .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
     }
 
@@ -60,7 +61,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         return getOrCreatePerson(customerRequest)
                 .flatMap(person -> createAndSaveCustomer(customerRequest, person))
-                .onErrorMap(exception -> new CustomerException("An error occurred while creating the customer: " + exception.getMessage()))
+                .onErrorResume(this::mapUnexpectedErrors)
                 .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
     }
 
@@ -85,8 +86,8 @@ public class CustomerServiceImpl implements CustomerService {
 
         return personService.getById(identification)
                 .flatMap(existingPerson -> updatePersonAndCustomer(existingPerson, customerRequest))
-                .switchIfEmpty(Mono.error(new CustomerException("Person not found", identification)))
-                .onErrorMap(exception -> new CustomerException("An error occurred while updating the customer: " + exception.getMessage()))
+                .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Person not found: " + identification)))
+                .onErrorResume(this::mapUnexpectedErrors)
                 .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
     }
 
@@ -107,7 +108,7 @@ public class CustomerServiceImpl implements CustomerService {
                     return customerRepository.save(updatedCustomer)
                             .map(savedCustomer -> customerMapper.toPostCustomerResponse(savedCustomer, updatedPerson));
                 })
-                .switchIfEmpty(Mono.error(new CustomerException("Customer not found", updatedPerson.getIdentification())));
+                .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Customer not found: " + updatedPerson.getIdentification())));
     }
 
     @Override
@@ -117,7 +118,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         return personService.getById(identification)
                 .flatMap(this::deleteCustomerByPerson)
-                .switchIfEmpty(Mono.error(new CustomerException("Person not found", identification)))
+                .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Customer not found: " + identification)))
                 .onErrorResume(e -> {
                     log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage());
                     return Mono.just(createDeleteResponse("Error deleting customer: " + e.getMessage(), identification));
@@ -128,7 +129,7 @@ public class CustomerServiceImpl implements CustomerService {
         return customerRepository.findById(person.getIdentification())
                 .flatMap(customer -> customerRepository.delete(customer)
                         .thenReturn(createDeleteResponse("Customer successfully deleted.", customer.getIdentification())))
-                .switchIfEmpty(Mono.error(new CustomerException("Customer not found", person.getIdentification())));
+                .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Customer not found: " + person.getIdentification())));
     }
 
     private DeleteCustomerResponse createDeleteResponse(String message, String customerId) {
@@ -137,5 +138,11 @@ public class CustomerServiceImpl implements CustomerService {
         response.setCustomerId(customerId);
         return response;
     }
+
+    private <T> Mono<T> mapUnexpectedErrors(Throwable ex) {
+        if (ex instanceof CustomerException) return Mono.error(ex);
+        return Mono.error(new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage()));
+    }
+
 
 }
