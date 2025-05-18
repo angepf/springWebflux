@@ -1,7 +1,7 @@
 package com.challenge.api.account.management.service.impl;
 
 import com.challenge.api.account.management.domain.Account;
-import com.challenge.api.account.management.domain.enums.ServiceErrors;
+import com.challenge.api.account.management.domain.enums.AccountError;
 import com.challenge.api.account.management.exception.AccountException;
 import com.challenge.api.account.management.repository.AccountRepository;
 import com.challenge.api.account.management.service.AccountService;
@@ -34,11 +34,11 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Mono<PostAccountResponse> getAccountById(Long accountNumber) {
         return accountRepository.findById(accountNumber)
-                .switchIfEmpty(Mono.error(new AccountException(ServiceErrors.NOT_FOUND, accountNumber)))
+                .switchIfEmpty(Mono.error(new AccountException(AccountError.NOT_FOUND, accountNumber)))
                 .map(accountMapper::toPostAccountResponse)
                 .doOnSuccess(acc -> log.info("Account retrieved successfully: {}", acc))
                 .doOnError(error -> log.error("Error retrieving account: {}", error.getMessage()))
-                .onErrorMap(error -> new AccountException(ServiceErrors.CUSTOMER_SERVICE_ERROR, error.getMessage()));
+                .onErrorMap(error -> wrapAccountException(error, AccountError.INTERNAL_ERROR));
     }
 
     @Override
@@ -47,12 +47,12 @@ public class AccountServiceImpl implements AccountService {
                 .map(accountMapper::toPostAccountResponse)
                 .doOnComplete(() -> log.info("All accounts retrieved successfully"))
                 .doOnError(error -> log.error("Error retrieving all accounts: {}", error.getMessage()))
-                .onErrorMap(error -> new AccountException(ServiceErrors.CUSTOMER_SERVICE_ERROR, error.getMessage()));
+                .onErrorMap(error -> wrapAccountException(error, AccountError.INTERNAL_ERROR));
     }
 
     private Mono<Account> validateAndSaveAccount(Account account, String customerId) {
         return customerService.getCustomerById(customerId)
-                .switchIfEmpty(Mono.error(new AccountException(ServiceErrors.NOT_FOUND, customerId)))
+                .switchIfEmpty(Mono.error(new AccountException(AccountError.CUSTOMER_NOT_FOUND, customerId)))
                 .flatMap(customer -> accountRepository.save(account));
     }
 
@@ -64,10 +64,10 @@ public class AccountServiceImpl implements AccountService {
                 .flatMap(savedAccount -> createFirstMovement(savedAccount.getAccountNumber(), accountRequest.getInitialBalance())
                         .thenReturn(accountMapper.toPostAccountResponse(savedAccount))
                         .onErrorResume(error -> accountRepository.delete(savedAccount)
-                                .then(Mono.error(new AccountException(ServiceErrors.CUSTOMER_SERVICE_ERROR, error.getMessage())))))
-                .doOnSuccess(accountResponse -> log.info("|--> Account created successfully: {}", accountResponse))
+                                .then(Mono.error(new AccountException(AccountError.MOVEMENT_CREATION_FAILED, error.getMessage())))))
+                .doOnSuccess(accountResponse -> log.info("Account created successfully: {}", accountResponse))
                 .doOnError(error -> log.error("Error creating account: {}", error.getMessage()))
-                .onErrorMap(error -> new AccountException(ServiceErrors.CUSTOMER_SERVICE_ERROR, error.getMessage()));
+                .onErrorMap(error -> wrapAccountException(error, AccountError.CREATION_FAILED));
     }
 
     private Mono<PostMovementResponse> createFirstMovement(Long accountNumber, BigDecimal value) {
@@ -84,7 +84,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Mono<PostAccountResponse> updateAccount(Long accountNumber, PostAccountRequest accountRequest) {
         return accountRepository.findById(accountNumber)
-                .switchIfEmpty(Mono.error(new AccountException(ServiceErrors.NOT_FOUND, accountNumber)))
+                .switchIfEmpty(Mono.error(new AccountException(AccountError.NOT_FOUND, accountNumber)))
                 .flatMap(existingAccount -> {
                     Account updatedAccount = accountMapper.toAccount(accountRequest);
                     updatedAccount.setAccountNumber(existingAccount.getAccountNumber());
@@ -93,18 +93,18 @@ public class AccountServiceImpl implements AccountService {
                 .map(accountMapper::toPostAccountResponse)
                 .doOnSuccess(acc -> log.info("Account updated successfully: {}", acc))
                 .doOnError(error -> log.error("Error updating account: {}", error.getMessage()))
-                .onErrorMap(error -> new AccountException(ServiceErrors.CUSTOMER_SERVICE_ERROR, error.getMessage()));
+                .onErrorMap(error -> wrapAccountException(error, AccountError.UPDATE_FAILED));
     }
 
     @Override
     public Mono<DeleteResponse> deleteAccount(Long accountNumber) {
         return accountRepository.findById(accountNumber)
-                .switchIfEmpty(Mono.error(new AccountException(ServiceErrors.NOT_FOUND, accountNumber)))
+                .switchIfEmpty(Mono.error(new AccountException(AccountError.NOT_FOUND, accountNumber)))
                 .flatMap(existingAccount -> accountRepository.delete(existingAccount)
                         .then(Mono.just(createDeleteResponse(existingAccount.getAccountNumber()))))
                 .doOnSuccess(response -> log.info("Account deleted successfully: {}", response))
                 .doOnError(error -> log.error("Error deleting account: {}", error.getMessage()))
-                .onErrorMap(error -> new AccountException(ServiceErrors.CUSTOMER_SERVICE_ERROR, error.getMessage()));
+                .onErrorMap(error -> wrapAccountException(error, AccountError.DELETE_FAILED));
     }
 
     private DeleteResponse createDeleteResponse(Long accountNumber) {
@@ -112,6 +112,13 @@ public class AccountServiceImpl implements AccountService {
         response.setMessage("Account successfully deleted.");
         response.setId(accountNumber);
         return response;
+    }
+
+    private AccountException wrapAccountException(Throwable error, AccountError accountError) {
+        if (error instanceof AccountException) {
+            return (AccountException) error;
+        }
+        return new AccountException(accountError, error.getMessage());
     }
 
 }

@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum PersonError {
+public enum PersonError implements DomainErrorCode {
 
     NOT_FOUND("MCMPE_001", "Person not found", HttpStatus.NOT_FOUND),
     INVALID_DATA("MCMPE_002", "Invalid person data", HttpStatus.BAD_REQUEST),

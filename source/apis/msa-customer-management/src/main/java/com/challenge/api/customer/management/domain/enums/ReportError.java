@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum ReportError {
+public enum ReportError implements DomainErrorCode {
 
     MCMRE_NOT_FOUND("MCMRE_001", "Report not found", HttpStatus.NOT_FOUND),
     GENERATION_FAILED("MCMRE_002", "Failed to generate report", HttpStatus.BAD_REQUEST),

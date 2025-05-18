@@ -29,40 +29,31 @@ public class AccountController implements AccountsApi {
 
     @Override
     public Mono<ResponseEntity<Flux<PostAccountResponse>>> getAllAccounts(ServerWebExchange exchange) {
-        return Mono.just(ResponseEntity.ok(accountService.getAllAccounts()))
-                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().build()));
+        return Mono.just(ResponseEntity.ok(accountService.getAllAccounts()));
     }
 
     @Override
     public Mono<ResponseEntity<PostAccountResponse>> getAccountById(Long accountNumber, ServerWebExchange exchange) {
         return accountService.getAccountById(accountNumber)
-                .map(ResponseEntity::ok)
-                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+                .map(ResponseEntity::ok);
     }
 
     @Override
     public Mono<ResponseEntity<PostAccountResponse>> createAccount(@Valid @RequestBody PostAccountRequest postAccountRequest, ServerWebExchange exchange) {
         return accountService.createAccount(postAccountRequest)
-                .map(ResponseEntity::ok)
-                .defaultIfEmpty(ResponseEntity.badRequest().build());
+                .map(ResponseEntity::ok);
     }
 
     @Override
     public Mono<ResponseEntity<PostAccountResponse>> updateAccountById(Long accountNumber, PostAccountRequest postAccountRequest, ServerWebExchange exchange) {
         return accountService.updateAccount(accountNumber, postAccountRequest)
-                .map(ResponseEntity::ok)
-                .switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+                .map(ResponseEntity::ok);
     }
 
     @Override
     public Mono<ResponseEntity<DeleteResponse>> deleteAccountById(Long accountNumber, ServerWebExchange exchange) {
         return accountService.deleteAccount(accountNumber)
-                .map(deleteResponse -> {
-                    if ("Customer successfully deleted.".equals(deleteResponse.getMessage())) {
-                        return ResponseEntity.ok(deleteResponse);
-                    } else {
-                        return ResponseEntity.status(404).body(deleteResponse);
-                    }
-                });
+                .map(ResponseEntity::ok);
     }
+
 }

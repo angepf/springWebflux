@@ -2,6 +2,8 @@ package com.challenge.api.account.management.service.impl;
 
 import com.challenge.api.account.management.domain.Account;
 import com.challenge.api.account.management.domain.Movement;
+import com.challenge.api.account.management.domain.enums.ReportError;
+import com.challenge.api.account.management.exception.ReportException;
 import com.challenge.api.account.management.repository.AccountRepository;
 import com.challenge.api.account.management.repository.MovementRepository;
 import com.challenge.api.account.management.service.CustomerService;
@@ -46,21 +48,23 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public Mono<AccountReportResponse> generateReport(String customerId, LocalDate startDate, LocalDate endDate) {
         return accountRepository.findByCustomerId(customerId)
-                .flatMap(account -> customerService.getCustomerById(account.getCustomerId())
-                        .flatMap(customer -> movementRepository.findByAccountNumberAndDateBetween(account.getAccountNumber(), startDate, endDate)
-                                .publishOn(Schedulers.boundedElastic())
-                                .map(movement -> {
-                                    return generateReportResponse(movement, account, customer.getName());
-                                })
-                                .collectList()
-                                .map(transactions -> {
-                                    AccountReportResponse accountResponse = new AccountReportResponse();
-                                    accountResponse.setTransactions(transactions);
-                                    return accountResponse;
-                                })
-                        )
-                )
-                .single();
+                .next()
+                .switchIfEmpty(Mono.error(new ReportException(ReportError.ACCOUNT_NOT_FOUND, customerId)))
+                .flatMap(account ->
+                        customerService.getCustomerById(account.getCustomerId())
+                                .switchIfEmpty(Mono.error(new ReportException(ReportError.CUSTOMER_NOT_FOUND, customerId)))
+                                .flatMap(customer ->
+                                        movementRepository.findByAccountNumberAndDateBetween(account.getAccountNumber(), startDate, endDate)
+                                                .publishOn(Schedulers.boundedElastic())
+                                                .map(movement -> generateReportResponse(movement, account, customer.getName()))
+                                                .collectList()
+                                                .map(transactions -> {
+                                                    AccountReportResponse reportResponse = new AccountReportResponse();
+                                                    reportResponse.setTransactions(transactions);
+                                                    return reportResponse;
+                                                })
+                                )
+                );
     }
 
     public Mono<Void> publishReportResponseNew(Movement movement) {

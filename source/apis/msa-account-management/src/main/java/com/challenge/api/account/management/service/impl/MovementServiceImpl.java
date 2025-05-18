@@ -1,13 +1,16 @@
 package com.challenge.api.account.management.service.impl;
 
 import com.challenge.api.account.management.domain.Movement;
+import com.challenge.api.account.management.domain.enums.MovementError;
 import com.challenge.api.account.management.exception.MovementException;
-import com.challenge.api.account.management.repository.AccountRepository;
 import com.challenge.api.account.management.repository.MovementRepository;
 import com.challenge.api.account.management.service.MovementService;
 import com.challenge.api.account.management.service.ReportService;
 import com.challenge.api.account.management.service.mapper.MovementMapper;
-import com.challenge.api.account.management.service.models.*;
+import com.challenge.api.account.management.service.models.DeleteResponse;
+import com.challenge.api.account.management.service.models.MovementTypeEnum;
+import com.challenge.api.account.management.service.models.PostMovementRequest;
+import com.challenge.api.account.management.service.models.PostMovementResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -33,7 +36,6 @@ public class MovementServiceImpl implements MovementService {
     @Override
     public Mono<PostMovementResponse> createMovement(PostMovementRequest movementRequest) {
         Movement movement = movementMapper.toMovement(movementRequest);
-
         movement.setDate(LocalDate.now());
         movement.setStatus(true);
 
@@ -43,28 +45,29 @@ public class MovementServiceImpl implements MovementService {
                 .map(movementMapper::toPostMovementResponse)
                 .publishOn(Schedulers.boundedElastic())
                 .doOnSuccess(movementResponse -> {
-                    log.info("|--> Movement created successfully: {}", movementResponse);
+                    log.info("Movement created successfully: {}", movementResponse);
                     reportService.publishReportResponseNew(movement).subscribe();
-                })                .doOnError(error -> log.error("Error creating movement: {}", error.getMessage()))
-                .onErrorMap(error -> new MovementException("Failed to create movement: " + error.getMessage()));
+                })
+                .doOnError(error -> log.error("Error creating movement: {}", error.getMessage()))
+                .onErrorMap(error -> new MovementException(MovementError.INTERNAL_ERROR, "Failed to create movement: " + error.getMessage()));
     }
 
     private Mono<Movement> validateAndUpdateBalance(Movement movement) {
-        log.info("|--> Validating and updating balance for movement: {}", movement);
+        log.info("Validating and updating balance for movement: {}", movement);
         return getLatestBalance(movement.getAccountNumber())
                 .flatMap(balance -> {
-                    log.info("|--> Latest balance retrieved: {}", balance);
+                    log.info("Latest balance retrieved: {}", balance);
                     BigDecimal value = movement.getValue();
 
                     if (movement.getType().equals(MovementTypeEnum.CREDIT)) {
                         movement.setBalance(balance.add(value));
                     } else {
                         if (balance.compareTo(value) < 0) {
-                            return Mono.error(new MovementException("Insufficient funds"));
+                            return Mono.error(new MovementException(MovementError.INSUFFICIENT_FUNDS));
                         }
                         movement.setBalance(balance.subtract(value));
                     }
-                    log.info("|--> Balance updated successfully: {}", movement);
+                    log.info("Balance updated successfully: {}", movement);
                     return Mono.just(movement);
                 });
     }
@@ -77,11 +80,11 @@ public class MovementServiceImpl implements MovementService {
     @Override
     public Mono<PostMovementResponse> getMovementById(Long id) {
         return movementRepository.findById(id)
-                .switchIfEmpty(Mono.error(new MovementException("Movement not found", id)))
+                .switchIfEmpty(Mono.error(new MovementException(MovementError.NOT_FOUND, "Movement not found with id: " + id)))
                 .map(movementMapper::toPostMovementResponse)
                 .doOnSuccess(movementResponse -> log.info("Movement retrieved successfully: {}", movementResponse))
                 .doOnError(error -> log.error("Error retrieving movement: {}", error.getMessage()))
-                .onErrorMap(error -> new MovementException("Failed to retrieve movement: " + error.getMessage()));
+                .onErrorMap(error -> new MovementException(MovementError.INTERNAL_ERROR, "Failed to retrieve movement: " + error.getMessage()));
     }
 
     @Override
@@ -90,13 +93,13 @@ public class MovementServiceImpl implements MovementService {
                 .map(movementMapper::toPostMovementResponse)
                 .doOnComplete(() -> log.info("All movements retrieved successfully"))
                 .doOnError(error -> log.error("Error retrieving all movements: {}", error.getMessage()))
-                .onErrorMap(error -> new MovementException("Failed to retrieve all movements: " + error.getMessage()));
+                .onErrorMap(error -> new MovementException(MovementError.INTERNAL_ERROR, "Failed to retrieve all movements: " + error.getMessage()));
     }
 
     @Override
     public Mono<PostMovementResponse> updateMovement(Long id, PostMovementRequest movementRequest) {
         return movementRepository.findById(id)
-                .switchIfEmpty(Mono.error(new MovementException("Movement not found with id: " + id)))
+                .switchIfEmpty(Mono.error(new MovementException(MovementError.NOT_FOUND, "Movement not found with id: " + id)))
                 .flatMap(existingMovement -> {
                     Movement updatedMovement = movementMapper.toMovement(movementRequest);
                     updatedMovement.setId(existingMovement.getId());
@@ -105,23 +108,23 @@ public class MovementServiceImpl implements MovementService {
                 .map(movementMapper::toPostMovementResponse)
                 .doOnSuccess(acc -> log.info("Movement updated successfully: {}", acc))
                 .doOnError(error -> log.error("Error updating movement: {}", error.getMessage()))
-                .onErrorMap(error -> new MovementException("Failed to update movement: " + error.getMessage()));
+                .onErrorMap(error -> new MovementException(MovementError.INTERNAL_ERROR, "Failed to update movement: " + error.getMessage()));
     }
 
     @Override
     public Mono<DeleteResponse> deleteMovement(Long id) {
         return movementRepository.findById(id)
-                .switchIfEmpty(Mono.error(new MovementException("Movement not found", id)))
+                .switchIfEmpty(Mono.error(new MovementException(MovementError.NOT_FOUND, "Movement not found with id: " + id)))
                 .flatMap(existingMovement -> movementRepository.delete(existingMovement)
-                        .then(Mono.just(createDeleteResponse("Movement successfully deleted.", existingMovement.getId()))))
+                        .then(Mono.just(createDeleteResponse(existingMovement.getId()))))
                 .doOnSuccess(response -> log.info("Movement deleted successfully: {}", response))
                 .doOnError(error -> log.error("Error deleting movement: {}", error.getMessage()))
-                .onErrorMap(error -> new MovementException("Failed to delete movement: " + error.getMessage()));
+                .onErrorMap(error -> new MovementException(MovementError.INTERNAL_ERROR, "Failed to delete movement: " + error.getMessage()));
     }
 
-    private DeleteResponse createDeleteResponse(String message, Long movementNumber) {
+    private DeleteResponse createDeleteResponse(Long movementNumber) {
         DeleteResponse response = new DeleteResponse();
-        response.setMessage(message);
+        response.setMessage("Movement successfully deleted.");
         response.setId(movementNumber);
         return response;
     }

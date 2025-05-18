@@ -1,6 +1,6 @@
 package com.challenge.api.account.management.exception;
 
-import com.challenge.api.account.management.domain.enums.ServiceErrors;
+import com.challenge.api.account.management.domain.enums.AccountError;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
@@ -9,25 +9,24 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountException extends RuntimeException {
 
-    final ServiceErrors serviceErrors;
+    final AccountError accountError;
     final String errorCode;
 
-    public AccountException(ServiceErrors serviceErrors, String message) {
+    public AccountException(AccountError accountError, String message) {
         super(message);
-        this.serviceErrors = serviceErrors;
+        this.accountError = accountError;
         this.errorCode = "";
     }
 
-    public AccountException(ServiceErrors serviceErrors, Long accountNumber) {
-        super(serviceErrors.getErrorMessage());
-        this.serviceErrors = serviceErrors;
-        this.errorCode = serviceErrors.getErrorCode();
-
+    public AccountException(AccountError accountError, Long accountNumber) {
+        super(accountError.getMessage());
+        this.accountError = accountError;
+        this.errorCode = accountError.getCode();
     }
 
-    public AccountException(String errorCode, ServiceErrors serviceErrors, String message, Long accountNumber) {
+    public AccountException(String errorCode, AccountError accountError, String message, Long accountNumber) {
         super(message + ", with id: [" + accountNumber + "]");
-        this.serviceErrors = serviceErrors;
+        this.accountError = accountError;
         this.errorCode = errorCode;
     }
 
