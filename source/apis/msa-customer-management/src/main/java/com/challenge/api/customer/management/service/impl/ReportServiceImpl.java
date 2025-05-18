@@ -30,29 +30,38 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public Mono<AccountReportResponse> getReportByCustomerIdAndDate(String customerId, LocalDate startDate, LocalDate endDate) {
+        log.info("Fetching report for customerId: {}, from: {} to: {}", customerId, startDate, endDate);
+
         return reportRepository.findByCustomerIdAndDateBetween(customerId, startDate, endDate)
-                .flatMap(report -> personRepository.findById(customerId)
-                        .map(person -> reportMapper.toReportResponse(report, person.getName()))
+                .flatMap(report ->
+                        personRepository.findById(customerId)
+                                .map(person -> reportMapper.toReportResponse(report, person.getName()))
                 )
                 .collectList()
-                .map(reports -> {
-                    AccountReportResponse accountReportResponse = new AccountReportResponse();
-                    accountReportResponse.setTransactions(reports);
-                    return accountReportResponse;
+                .map(reportList -> {
+                    AccountReportResponse response = new AccountReportResponse();
+                    response.setTransactions(reportList);
+                    return response;
                 })
-                .doOnSuccess(reportResponse -> log.info("Report retrieved successfully"))
-                .doOnError(error -> log.error("Error retrieving report: {}", error.getMessage()))
-                .onErrorMap(error -> new ReportException(ReportError.GENERATION_FAILED, "Failed to retrieve report: " + error.getMessage()));
+                .doOnSuccess(resp -> log.info("Report generated successfully for customerId: {}", customerId))
+                .onErrorMap(error -> {
+                    log.error("Error generating report for customerId {}: {}", customerId, error.getMessage(), error);
+                    return new ReportException(ReportError.GENERATION_FAILED, "Failed to retrieve report: " + error.getMessage());
+                });
     }
 
     @Override
     public Mono<PostReportResponse> createReport(PostReportResponse reportResponse) {
+        log.info("Creating report for customer: {}", reportResponse.getCustomerName());
+
         Report report = reportMapper.toReport(reportResponse);
+
         return reportRepository.save(report)
                 .map(savedReport -> reportMapper.toReportResponse(savedReport, reportResponse.getCustomerName()))
-                .doOnSuccess(savedReport -> log.info("Report saved successfully: {}", savedReport))
-                .doOnError(error -> log.error("Error saving report: {}", error.getMessage()))
-                .onErrorMap(error -> new ReportException(ReportError.INTERNAL_ERROR, "Failed to save report: " + error.getMessage()));
+                .doOnSuccess(resp -> log.info("Report saved successfully for customer: {}", reportResponse.getCustomerName()))
+                .onErrorMap(error -> {
+                    log.error("Error saving report for customer {}: {}", reportResponse.getCustomerName(), error.getMessage(), error);
+                    return new ReportException(ReportError.INTERNAL_ERROR, "Failed to save report: " + error.getMessage());
+                });
     }
-
 }

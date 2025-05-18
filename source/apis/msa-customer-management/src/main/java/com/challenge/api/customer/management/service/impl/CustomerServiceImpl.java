@@ -30,6 +30,7 @@ public class CustomerServiceImpl implements CustomerService {
     CustomerMapper customerMapper;
     PersonService personService;
 
+    @Override
     public Flux<PostCustomerResponse> getAllCustomers() {
         String methodName = "getAllCustomers";
         log.info(Constants.INIT_METHOD, methodName);
@@ -37,8 +38,10 @@ public class CustomerServiceImpl implements CustomerService {
         return customerRepository.findAll()
                 .flatMap(customer -> personService.getById(customer.getIdentification())
                         .map(person -> customerMapper.toPostCustomerResponse(customer, person)))
-                .onErrorResume(this::mapUnexpectedErrors)
-                .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
+                .onErrorMap(ex -> {
+                    log.error("Unexpected error in getAllCustomers: {}", ex.getMessage(), ex);
+                    return new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage());
+                });
     }
 
     @Override
@@ -50,8 +53,11 @@ public class CustomerServiceImpl implements CustomerService {
                 .flatMap(person -> customerRepository.findById(person.getIdentification())
                         .map(customer -> customerMapper.toPostCustomerResponse(customer, person)))
                 .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Customer not found: " + identification)))
-                .onErrorResume(this::mapUnexpectedErrors)
-                .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
+                .onErrorMap(ex -> {
+                    log.error("Unexpected error in getCustomerById: {}", ex.getMessage(), ex);
+                    if (ex instanceof CustomerException) return ex;
+                    return new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage());
+                });
     }
 
     @Override
@@ -61,8 +67,11 @@ public class CustomerServiceImpl implements CustomerService {
 
         return getOrCreatePerson(customerRequest)
                 .flatMap(person -> createAndSaveCustomer(customerRequest, person))
-                .onErrorResume(this::mapUnexpectedErrors)
-                .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
+                .onErrorMap(ex -> {
+                    log.error("Unexpected error in createCustomer: {}", ex.getMessage(), ex);
+                    if (ex instanceof CustomerException) return ex;
+                    return new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage());
+                });
     }
 
     private Mono<Person> getOrCreatePerson(PostCustomerRequest customerRequest) {
@@ -87,8 +96,11 @@ public class CustomerServiceImpl implements CustomerService {
         return personService.getById(identification)
                 .flatMap(existingPerson -> updatePersonAndCustomer(existingPerson, customerRequest))
                 .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Person not found: " + identification)))
-                .onErrorResume(this::mapUnexpectedErrors)
-                .doOnError(e -> log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage()));
+                .onErrorMap(ex -> {
+                    log.error("Unexpected error in updateCustomer: {}", ex.getMessage(), ex);
+                    if (ex instanceof CustomerException) return ex;
+                    return new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage());
+                });
     }
 
     private Mono<PostCustomerResponse> updatePersonAndCustomer(Person existingPerson, PostCustomerRequest customerRequest) {
@@ -119,9 +131,10 @@ public class CustomerServiceImpl implements CustomerService {
         return personService.getById(identification)
                 .flatMap(this::deleteCustomerByPerson)
                 .switchIfEmpty(Mono.error(new CustomerException(CustomerError.NOT_FOUND, "Customer not found: " + identification)))
-                .onErrorResume(e -> {
-                    log.error(Constants.ERROR_METHOD_PARAMETERS, methodName, e.getMessage());
-                    return Mono.just(createDeleteResponse("Error deleting customer: " + e.getMessage(), identification));
+                .onErrorMap(ex -> {
+                    log.error("Unexpected error in deleteCustomer: {}", ex.getMessage(), ex);
+                    if (ex instanceof CustomerException) return ex;
+                    return new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage());
                 });
     }
 
@@ -138,11 +151,5 @@ public class CustomerServiceImpl implements CustomerService {
         response.setCustomerId(customerId);
         return response;
     }
-
-    private <T> Mono<T> mapUnexpectedErrors(Throwable ex) {
-        if (ex instanceof CustomerException) return Mono.error(ex);
-        return Mono.error(new CustomerException(CustomerError.INTERNAL_ERROR, ex.getMessage()));
-    }
-
 
 }
